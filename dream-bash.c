@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 #define INP_SIZE 256
 #ifndef IF_ERR
@@ -106,11 +107,34 @@ void run(char **args)
 		exit(errno);
 		break;
 	case 0:
-		IF_ERR(execvp(args[0], args), -1, "Exec error");
+		i = execvp(args[0], args);
 		//Запускаем программу
+		if (errno != ENOENT)
+			IF_ERR(i, -1, "Exec error");
+		else 
+			perror(args[0]);
+		//Если такого файла нету,
+		//перрор печатает
 		break;
-	//default:
+	default:
+		wait(&i);
+		//Возможно потом обработаю i
+		//Ждем процесс
 	}
+}
+void recognize(char **args)
+//Выясним, а нет ли во вводе
+//таких вещей, как cd,
+//например
+{
+	if (!strcmp(args[0], "cd")) {
+	//Если во вводе cd
+		if(chdir(args[1]) == -1)
+			perror(args[1]);
+		return;
+		//И возвращаемся
+	}
+	run(args);
 }
 
 int main(int argc, char *argv[])
@@ -125,9 +149,6 @@ int main(int argc, char *argv[])
 	IF_ERR(userinfo, NULL, "Getpwiud error");
 	user = userinfo->pw_name;
 	//и имя пользователя
-	IF_ERR(getcwd(cwd, ENV_SIZE), NULL, "Getcwd error");
-	//Ну и текущий каталог
-	tilda(cwd, user);
 	history = open("history", O_RDWR|O_APPEND|O_CREAT, 0664);
 	IF_ERR(history, -1, "Open error");
 
@@ -135,7 +156,10 @@ int main(int argc, char *argv[])
 		int len;
 		char **args;
 
-		IF_ERR(printf(INVITE), -1, "Prinf error:");
+		IF_ERR(getcwd(cwd, ENV_SIZE), NULL, "Getcwd error");
+		//Узнаем текущий каталог
+		tilda(cwd, user);
+		IF_ERR(printf(INVITE), -1, "Printf error:");
 		//приглашаем
 		IF_ERR(fflush(stdout), EOF, "Fflush error:");
 		//чтобы вывелось сразу
@@ -146,8 +170,11 @@ int main(int argc, char *argv[])
 		//заканчиваем строку
 		printf("Your input is: %s", buf);
 		write(history, buf, len);
+		//Оставим след в истории
 		args = split(buf);
-		run(args);
+		//Из строки получаем массив слов
+		recognize(args);
+		//Запускаем
 		free(args);
 	}
 }
