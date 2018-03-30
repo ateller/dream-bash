@@ -37,8 +37,8 @@
 
 int child_pid;
 
-void tilda(char *path, char *user)
 //Заменяет в пути домашний каталог на ~
+void tilda(char *path, char *user)
 {
 	char comp[ENV_SIZE*2];
 	//Здесь адрес домашнего каталога
@@ -61,20 +61,7 @@ void tilda(char *path, char *user)
 	}
 }
 
-int whatisthis(char *path)
-{
-	struct stat temp;
-
-	if (stat(path, &temp) == -1)
-		return 2;
-	//Неправильный путь
-	if (S_ISDIR(temp.st_mode))
-		return 1;
-	//Директория
-	if (S_ISREG(temp.st_mode))
-		return 0;
-	//Файл
-}
+//Бьет строку на набор аргументов
 char **split(char *input)
 {
 	char **args;
@@ -142,8 +129,8 @@ void run(char **args)
 {
 	int i = 0;
 
-	for (; args[i] != NULL; i++)
-		printf("Arg %d is %s\n", i, args[i]);
+	//for (; args[i] != NULL; i++)
+	//	printf("Arg %d is %s\n", i, args[i]);
 	child_pid = fork();
 	//Копируем процесс
 	switch (child_pid) {
@@ -169,15 +156,18 @@ void run(char **args)
 		printf("\n");
 	}
 }
+
+//Выясним, а нет ли во вводе таких
+//вещей, как cd, например. Возможно,
+//что-нибудь еще, но пока только cd
 void recognize(char **args)
-//Выясним, а нет ли во вводе
-//таких вещей, как cd,
-//например
 {
 	if (!strcmp(args[0], "cd")) {
 	//Если во вводе cd
 		if (chdir(args[1]) == -1)
 			perror(args[1]);
+		//Пусть cd сам решает, какой
+		//путь правильный, а какой нет
 		return;
 		//И возвращаемся
 	}
@@ -191,7 +181,7 @@ int main(int argc, char *argv[])
 	struct passwd *userinfo;
 
 	child_pid = 0;
-	//Обнуляем пид дочернего
+	//Обнуляем пид потомка
 	if (-1 == gethostname(hostname, ENV_SIZE)) {
 		perror("Gethostname error");
 		strcpy(hostname, "UNKNOWN_MASHINE");
@@ -223,7 +213,7 @@ int main(int argc, char *argv[])
 		//читаем ввод
 		buf[len] = 0;
 		//заканчиваем строку
-		printf("Your input is: %s", buf);
+		//printf("Your input is: %s", buf);
 		write(history, buf, len);
 		//Оставим след в истории
 		args = split(buf);
