@@ -146,6 +146,15 @@ void run(char **args)
 
 	//for (; args[i] != NULL; i++)
 	//	printf("Arg %d is %s\n", i, args[i]);
+	int len;
+
+	len = strlen(args[0]);
+	//чтобы запускать в фоновом режиме
+	len--;
+	if (args[0][len] == '&') {
+		args[0][len] = 0;
+		len = 0;
+	}
 	child_pid = fork();
 	//Копируем процесс
 	switch (child_pid) {
@@ -164,11 +173,14 @@ void run(char **args)
 		//перрор печатает
 		break;
 	default:
-		signals_handler(SET_HANDL);
-		IF_ERR(wait(&i), -1, "Wait error", kill(child_pid, 9););
-		//Ждем процесс
-		signals_handler(DEF_HANDL);
-		printf("\n");
+		if (len) {
+		//если = 0, то в фоне
+			signals_handler(SET_HANDL);
+			IF_ERR(wait(&i), -1, "Wait error", kill(child_pid, 9););
+			//Ждем процесс
+			signals_handler(DEF_HANDL);
+			printf("\n");
+		}
 	}
 }
 
