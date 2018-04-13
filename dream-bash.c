@@ -121,15 +121,15 @@ void signals_handler(int mode)
 {
 	struct sigaction act;
 
+	sigemptyset(&act.sa_mask);
+	//Пока не вижу необходимости
+	//что-то игнорировать
 	if (mode)
 		act.sa_handler = SIG_DFL;
 	else
 		act.sa_handler = send_sig;
 	//Вернуть деф. обработчик
 	//или поставить новый
-	sigemptyset(&act.sa_mask);
-	//Пока не вижу необходимости
-	//что-то игнорировать
 	act.sa_flags = SA_RESTART;
 	//Я не знаю точно, но мне
 	//кажется, так будет лучше
@@ -142,8 +142,6 @@ void signals_handler(int mode)
 
 void run(char **args)
 {
-	int i = 0;
-
 	//for (; args[i] != NULL; i++)
 	//	printf("Arg %d is %s\n", i, args[i]);
 	int len;
@@ -163,10 +161,10 @@ void run(char **args)
 		perror("Fork error:");
 		return;
 	case 0:
-		i = execvp(args[0], args);
+		execvp(args[0], args);
 		//Запускаем программу
 		if (errno != ENOENT)
-			IF_ERR(i, -1, "Exec error", ;);
+			perror("Exec error");
 		else
 			perror(args[0]);
 		//Если такого файла нету,
@@ -201,11 +199,14 @@ void recognize(char **args)
 	run(args);
 }
 
+//Телятников, группа 3О-309Б
+
 int main(int argc, char *argv[])
 {
 	int history;
 	char buf[INP_SIZE], hostname[ENV_SIZE], *user, cwd[ENV_SIZE];
 	struct passwd *userinfo;
+
 
 	child_pid = 0;
 	//Обнуляем пид потомка
